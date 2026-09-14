@@ -18,11 +18,12 @@
 
 #include "dino_sprite.h"
 #include "cactus_sprite.h"
+#include "menu.h"
+
+unsigned char *VGA = (unsigned char *)0xA0000;
 
 int dino_x = 10;
 int dino_y = 100;
-
-unsigned char *VGA = (unsigned char *)0xA0000;
 
 void set_vga_mode() {
 	_setvideomode(_MRES256COLOR);
@@ -105,7 +106,7 @@ int check_collision(int dx, int dy, int cx, int cy) {
 	return 0;
 }
 
-int main() {
+int start_game(void) {
 	int frame_counter = 0;
 	int is_jumping = 0;
 	int jump_v = 0;
@@ -125,7 +126,7 @@ int main() {
 			}
 			if (key == 27) {
 				pc_speaker();
-				return 0;
+				menu_run();
 			}
 		}
 		cmx -= 4;
@@ -168,15 +169,73 @@ int main() {
 		if (check_collision(dino_x, dino_y, cmx, 100)) {
 			pc_speaker();
 			delay(1000);
-			break;
+			menu_run();
 		}
 		if (check_collision(dino_x, dino_y, cmx2, 100)) {
 			pc_speaker();
-			delay(1000);
+			menu_run();
 			break;
 		}
 		delay(30);
 	}
 	set_text_mode();
 	return 0;
+}
+
+void show_options(void) {
+	clear_buffer(1);
+	flip_buffer();
+	getch();
+}
+
+void exit_game(void) {
+	if (screen_buffer != NULL) {
+		free(screen_buffer);
+	}
+	set_text_mode();
+	exit(0);
+}
+
+int menu_run() {
+	MenuWindow MainMenu;
+
+	/* Выделяем 64 КБ под закадровый буфер */
+	screen_buffer = (unsigned char *)malloc(64000);
+	if (screen_buffer == NULL) {
+		printf("Error: Memory allocation failed!\n");
+		return 1;
+	}
+
+	set_vga_mode();
+
+	MainMenu.count = 3;
+	MainMenu.current_selected = 0;
+
+	MainMenu.items[0].text = "NEW GAME";
+	MainMenu.items[0].x = 120;
+	MainMenu.items[0].y = 80;
+	MainMenu.items[0].action = start_game;
+
+	MainMenu.items[1].text = "OPTIONS";
+	MainMenu.items[1].x = 120;
+	MainMenu.items[1].y = 100;
+	MainMenu.items[1].action = show_options;
+
+	MainMenu.items[2].text = "QUIT";
+	MainMenu.items[2].x = 120;
+	MainMenu.items[2].y = 120;
+	MainMenu.items[2].action = exit_game;
+
+	menu_loop(&MainMenu);
+
+	if (screen_buffer != NULL) {
+		free(screen_buffer);
+	}
+
+	set_text_mode();
+	return 0;
+}
+
+int main() {
+	menu_run();
 }
