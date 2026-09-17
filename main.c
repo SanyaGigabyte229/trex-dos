@@ -50,11 +50,7 @@ void draw_dino_sprite(int x, int y) {
 		for (rx = 0; rx < SPRITE_DINO_W; rx++) {
 			unsigned char color = dino_sprite[ry][rx];
 			if (color != 0) {
-				int screen_x = x + rx;
-				int screen_y = y + ry;
-				if (screen_x >= 0 && screen_x < 320 && screen_y >= 0 && screen_y < 200) {
-					VGA[screen_y * 320 + screen_x] = color;
-				}
+				draw_pixel(x + rx, y + ry, color);
 			}
 		}
 	}
@@ -67,11 +63,7 @@ void draw_dino2_sprite(int x, int y) {
 		for (rx = 0; rx < SPRITE_DINO2_W; rx++) {
 			unsigned char color = dino_sprite2[ry][rx];
 			if (color != 0) {
-				int screen_x = x + rx;
-				int screen_y = y + ry;
-				if (screen_x >= 0 && screen_x < 320 && screen_y >= 0 && screen_y < 200) {
-					VGA[screen_y * 320 + screen_x] = color;
-				}
+				draw_pixel(x + rx, y + ry, color);
 			}
 		}
 	}
@@ -84,11 +76,7 @@ void draw_cactus_sprite(int x, int y) {
 		for (rx = 0; rx < SPRITE_CACTUS_W; rx++) {
 			unsigned char color = cactus_sprite[ry][rx];
 			if (color != 0) {
-				int screen_x = x + rx;
-				int screen_y = y + ry;
-				if (screen_x >= 0 && screen_x < 320 && screen_y >= 0 && screen_y < 200) {
-					VGA[screen_y * 320 + screen_x] = color;
-				}
+				draw_pixel(x + rx, y + ry, color);
 			}
 		}
 	}
@@ -114,12 +102,19 @@ int start_game(void) {
 	int cmx = 280;
 	int cmx2 = 140;
 	int min_dist = 120;
+
+	if (screen_buffer == NULL) {
+		screen_buffer = (unsigned char *)malloc(64000);
+		if (screen_buffer == NULL) {
+			return 1;
+		}
+	}
 	srand(time(NULL));
 	set_vga_mode();
 	while(1) {
 		if (kbhit()) {
 			key = getch();
-			if (key == 32, !is_jumping) {
+			if (key == 32 && !is_jumping) {
 				is_jumping = 1;
 				jump_v = 12;
 				pc_speaker();
@@ -153,7 +148,7 @@ int start_game(void) {
                 jump_v = 0;
             }
 		}
-		clear_mode(0);
+		clear_buffer(0);
 		frame_counter++;
 		if (is_jumping) {
 			draw_dino_sprite(dino_x, dino_y);
@@ -166,6 +161,9 @@ int start_game(void) {
 		}
         draw_cactus_sprite(cmx, 100);
         draw_cactus_sprite(cmx2, 100);
+
+        flip_buffer();
+
 		if (check_collision(dino_x, dino_y, cmx, 100)) {
 			pc_speaker();
 			delay(1000);
@@ -173,8 +171,8 @@ int start_game(void) {
 		}
 		if (check_collision(dino_x, dino_y, cmx2, 100)) {
 			pc_speaker();
+			delay(1000);
 			menu_run();
-			break;
 		}
 		delay(30);
 	}
