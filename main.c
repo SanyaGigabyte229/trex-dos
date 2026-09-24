@@ -1,54 +1,66 @@
-/*
- * T-Rex Chrome for DOS
- * Copyright (c) 2026 SanyaGigabyte229
- *
- * Licensed under the MIT License.
- * See LICENSE file in the project root for details.
- */
-
-
 #include <stdio.h>
 #include <string.h>
 #include <graph.h>
-#include <dos.h>
 #include <i86.h>
+#include <dos.h>
 #include <conio.h>
-#include <stdlib.h>
 #include <time.h>
+#include <stdlib.h>
 
 #include "dino_sprite.h"
 #include "cactus_sprite.h"
-#include "menu.h"
 
 unsigned char *VGA = (unsigned char *)0xA0000;
+
+unsigned char *screen_buffer = NULL;
 
 int dino_x = 10;
 int dino_y = 100;
 
-void set_vga_mode() {
+void set_vga_mode()
+{
 	_setvideomode(_MRES256COLOR);
 }
 
-void set_text_mode() {
+void set_text_mode()
+{
 	_setvideomode(_DEFAULTMODE);
 }
 
-void clear_mode(unsigned char clscolor) {
-	_fmemset(VGA, clscolor, 64000);
+//void clear_mode(unsigned char color)
+//{
+	//memset(VGA, color, 64000);
+//}
+
+void clear_buffer(unsigned char color) {
+	if (screen_buffer != NULL) {
+		memset(screen_buffer, color, 64000);
+	}
 }
 
-void pc_speaker() {
-	sound(1000);
-	delay(30);
-	nosound();
+void flip_buffer(void)
+{
+	if (screen_buffer != NULL) {
+		memcpy(VGA, screen_buffer, 64000);
+	}
 }
 
-void draw_dino_sprite(int x, int y) {
-	int rx, ry;
+void draw_pixel(int x, int y, unsigned char color)
+{
+	if (x >= 0 && x < 320 && y >= 0 && y < 200) {
+		screen_buffer[y * 320 + x] = color;
+	}
+}
 
+void draw_dino_sprite(int x, int y)
+{
+	int rx;
+	int ry;
 	for (ry = 0; ry < SPRITE_DINO_H; ry++) {
 		for (rx = 0; rx < SPRITE_DINO_W; rx++) {
 			unsigned char color = dino_sprite[ry][rx];
+			int screen_x = rx + x;
+			int screen_y = ry + y;
 			if (color != 0) {
 				draw_pixel(x + rx, y + ry, color);
 			}
@@ -56,12 +68,15 @@ void draw_dino_sprite(int x, int y) {
 	}
 }
 
-void draw_dino2_sprite(int x, int y) {
-	int rx, ry;
-
+void draw_dino_sprite2(int x, int y)
+{
+	int rx;
+	int ry;
 	for (ry = 0; ry < SPRITE_DINO2_H; ry++) {
 		for (rx = 0; rx < SPRITE_DINO2_W; rx++) {
 			unsigned char color = dino_sprite2[ry][rx];
+			int screen_x = rx + x;
+			int screen_y = ry + y;
 			if (color != 0) {
 				draw_pixel(x + rx, y + ry, color);
 			}
@@ -69,12 +84,15 @@ void draw_dino2_sprite(int x, int y) {
 	}
 }
 
-void draw_cactus_sprite(int x, int y) {
-	int rx, ry;
-
+void draw_cactus_sprite(int x, int y)
+{
+	int rx;
+	int ry;
 	for (ry = 0; ry < SPRITE_CACTUS_H; ry++) {
 		for (rx = 0; rx < SPRITE_CACTUS_W; rx++) {
 			unsigned char color = cactus_sprite[ry][rx];
+			int screen_x = rx + x;
+			int screen_y = ry + y;
 			if (color != 0) {
 				draw_pixel(x + rx, y + ry, color);
 			}
@@ -94,14 +112,22 @@ int check_collision(int dx, int dy, int cx, int cy) {
 	return 0;
 }
 
-int start_game(void) {
-	int frame_counter = 0;
-	int is_jumping = 0;
+void pc_speaker()
+{
+	sound(1000);
+	delay(30);
+	nosound();
+}
+
+int main()
+{
+	int frame_counter;
 	int jump_v = 0;
+	int is_jumping = 0;
 	char key = 0;
 	int cmx = 280;
-	int cmx2 = 140;
-	int min_dist = 120;
+	int cmx2 = 180;
+	int min_dist = 80;
 
 	if (screen_buffer == NULL) {
 		screen_buffer = (unsigned char *)malloc(64000);
@@ -109,9 +135,11 @@ int start_game(void) {
 			return 1;
 		}
 	}
+
 	srand(time(NULL));
 	set_vga_mode();
-	while(1) {
+
+	while (1) {
 		if (kbhit()) {
 			key = getch();
 			if (key == 32 && !is_jumping) {
@@ -121,7 +149,7 @@ int start_game(void) {
 			}
 			if (key == 27) {
 				pc_speaker();
-				menu_run();
+				break;
 			}
 		}
 		cmx -= 4;
@@ -138,102 +166,48 @@ int start_game(void) {
 				cmx2 = 320 + (rand() % 40);
 			}
 		}
+
 		if (is_jumping) {
 			dino_y -= jump_v;
-            jump_v -= 2;
+			jump_v -= 2;
 
-            if (dino_y >= 100) {
-                dino_y = 100;
-                is_jumping = 0;
-                jump_v = 0;
-            }
+			if (dino_y >= 100) {
+				dino_y = 100;
+				is_jumping = 0;
+				jump_v = 0;
+			}
 		}
 		clear_buffer(0);
 		frame_counter++;
 		if (is_jumping) {
 			draw_dino_sprite(dino_x, dino_y);
-		} else {
+		} else{
 			if ((frame_counter / 4) % 2 == 0) {
 				draw_dino_sprite(dino_x, dino_y);
-			} else {
-				draw_dino2_sprite(dino_x, dino_y);
+			} else{
+				draw_dino_sprite2(dino_x, dino_y);
 			}
+			
 		}
-        draw_cactus_sprite(cmx, 100);
-        draw_cactus_sprite(cmx2, 100);
+		draw_cactus_sprite(cmx, 100);
+		draw_cactus_sprite(cmx2, 100);
 
-        flip_buffer();
+		flip_buffer();
 
-		if (check_collision(dino_x, dino_y, cmx, 100)) {
+		if (check_collision(dino_x, dino_y, cmx, 100)){
 			pc_speaker();
 			delay(1000);
-			menu_run();
+			dino_y = 100;
+			main();
 		}
-		if (check_collision(dino_x, dino_y, cmx2, 100)) {
+		if (check_collision(dino_x, dino_y, cmx2, 100)){
 			pc_speaker();
 			delay(1000);
-			menu_run();
+			dino_y = 100;
+			main();
 		}
 		delay(30);
 	}
 	set_text_mode();
 	return 0;
-}
-
-void show_options(void) {
-	clear_buffer(1);
-	flip_buffer();
-	getch();
-}
-
-void exit_game(void) {
-	if (screen_buffer != NULL) {
-		free(screen_buffer);
-	}
-	set_text_mode();
-	exit(0);
-}
-
-int menu_run() {
-	MenuWindow MainMenu;
-
-	/* Выделяем 64 КБ под закадровый буфер */
-	screen_buffer = (unsigned char *)malloc(64000);
-	if (screen_buffer == NULL) {
-		printf("Error: Memory allocation failed!\n");
-		return 1;
-	}
-
-	set_vga_mode();
-
-	MainMenu.count = 3;
-	MainMenu.current_selected = 0;
-
-	MainMenu.items[0].text = "NEW GAME";
-	MainMenu.items[0].x = 120;
-	MainMenu.items[0].y = 80;
-	MainMenu.items[0].action = start_game;
-
-	MainMenu.items[1].text = "OPTIONS";
-	MainMenu.items[1].x = 120;
-	MainMenu.items[1].y = 100;
-	MainMenu.items[1].action = show_options;
-
-	MainMenu.items[2].text = "QUIT";
-	MainMenu.items[2].x = 120;
-	MainMenu.items[2].y = 120;
-	MainMenu.items[2].action = exit_game;
-
-	menu_loop(&MainMenu);
-
-	if (screen_buffer != NULL) {
-		free(screen_buffer);
-	}
-
-	set_text_mode();
-	return 0;
-}
-
-int main() {
-	menu_run();
 }
