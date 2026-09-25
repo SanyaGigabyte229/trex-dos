@@ -1,14 +1,13 @@
-#define SPRITE_DINO_W 20
-#define SPRITE_DINO_H 21
-
 /*
  * T-Rex Chrome for DOS
- * Copyright (c) 21526 Александр
+ * Copyright (c) 2026 Александр
  *
  * Licensed under the MIT License.
  * See LICENSE file in the project root for details.
  */
 
+#define SPRITE_DINO_W 20
+#define SPRITE_DINO_H 21
 
 #define SPRITE_DINO2_W 20
 #define SPRITE_DINO2_H 21

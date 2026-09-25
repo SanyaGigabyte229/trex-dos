@@ -1,6 +1,6 @@
 /*
  * T-Rex Chrome for DOS
- * Copyright (c) 21526 Александр
+ * Copyright (c) 2026 Александр
  *
  * Licensed under the MIT License.
  * See LICENSE file in the project root for details.
