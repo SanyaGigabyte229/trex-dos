@@ -1,4 +1,4 @@
-export WATCOM  := C:\work\WATCOM
+export WATCOM  := ваш путь\watcom1.9
 export PATH    := $(WATCOM)\binnt;$(WATCOM)\binw;$(PATH)
 export INCLUDE := $(WATCOM)\h
 
