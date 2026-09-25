@@ -17,6 +17,7 @@
 
 #include "dino_sprite.h"
 #include "cactus_sprite.h"
+#include "font3x5.h"
 
 unsigned char *VGA = (unsigned char *)0xA0000;
 
@@ -24,6 +25,8 @@ unsigned char *screen_buffer = NULL;
 
 int dino_x = 10;
 int dino_y = 102;
+int score = 0;
+int game_speed = 4;
 
 void set_vga_mode()
 {
@@ -80,6 +83,29 @@ void draw_ground(int ys, unsigned char color) {
 	for (x = 30; x < 320; x += 30) {
 		draw_pixel(x, ys + 8, color);
 	}
+}
+
+void draw_score(int x, int y, int value, unsigned char color)
+{
+    int i, row, col, digit, digit_x;
+    int temp = value;
+
+    for (i = 4; i >= 0; i--) {
+        digit = temp % 10;
+        temp /= 10;
+
+        digit_x = x + (i * 5);
+
+        for (row = 0; row < 5; row++) {
+            unsigned char data = font_3x5[digit][row];
+
+            for (col = 0; col < 3; col++) {
+                if ((data >> (2 - col)) & 1) {
+                    draw_pixel(digit_x + col, y + row, color);
+                }
+            }
+        }
+    }
 }
 
 void draw_dino_sprite(int x, int y)
@@ -151,13 +177,14 @@ void pc_speaker()
 
 int main()
 {
-	int frame_counter;
+	int frame_counter = 0;
 	int jump_v = 0;
 	int is_jumping = 0;
 	char key = 0;
 	int cmx = 280;
 	int cmx2 = 180;
 	int min_dist = 80;
+	int current_speed;
 
 	if (screen_buffer == NULL) {
 		screen_buffer = (unsigned char *)malloc(64000);
@@ -185,8 +212,12 @@ int main()
 				return 0;
 			}
 		}
-		cmx -= 4;
-		cmx2 -= 4;
+		score++;
+
+		current_speed = game_speed + (score / 100) * 1;
+
+		cmx -= current_speed;
+		cmx2 -= current_speed;
 		if (cmx < -SPRITE_CACTUS_W) {
 			cmx = cmx2 + min_dist + (rand() % 61);
 			if (cmx < 320) {
@@ -204,7 +235,7 @@ int main()
 			dino_y -= jump_v;
 			jump_v -= 2;
 
-			if (dino_y >= 100) {
+			if (dino_y >= 102) {
 				dino_y = 102;
 				is_jumping = 0;
 				jump_v = 0;
@@ -213,6 +244,8 @@ int main()
 		clear_buffer(15);
 
 		draw_ground(123, 0);
+
+		draw_score(280, 10, score, 0);
 
 		frame_counter++;
 		if (is_jumping) {
@@ -239,6 +272,8 @@ int main()
 			cmx = 280;
 			cmx2 = 180;
 			frame_counter = 0;
+			score = 0;
+			current_speed = 4;
 			while(kbhit()) getch();
 			continue;
 		}
