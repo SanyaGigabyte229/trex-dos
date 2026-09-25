@@ -183,7 +183,7 @@ int main()
 	char key = 0;
 	int cmx = 280;
 	int cmx2 = 180;
-	int min_dist = 80;
+	int min_dist = 120;
 	int current_speed;
 
 	if (screen_buffer == NULL) {
@@ -214,7 +214,7 @@ int main()
 		}
 		score++;
 
-		current_speed = game_speed + (score / 100) * 1;
+		current_speed = game_speed + (score / 200) * 1;
 
 		cmx -= current_speed;
 		cmx2 -= current_speed;
