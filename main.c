@@ -23,7 +23,7 @@ unsigned char *VGA = (unsigned char *)0xA0000;
 unsigned char *screen_buffer = NULL;
 
 int dino_x = 10;
-int dino_y = 100;
+int dino_y = 102;
 
 void set_vga_mode()
 {
@@ -60,6 +60,28 @@ void draw_pixel(int x, int y, unsigned char color)
 	}
 }
 
+void draw_line(int y, unsigned char color)
+{
+	int x;
+	for (x = 0; x < 320; x++) {
+		draw_pixel(x, y, color);
+	}
+}
+
+void draw_ground(int ys, unsigned char color) {
+	int x;
+
+	draw_line(ys, color);
+
+	for (x = 15; x < 320; x += 30) {
+		draw_pixel(x, ys + 4, color);
+	}
+
+	for (x = 30; x < 320; x += 30) {
+		draw_pixel(x, ys + 8, color);
+	}
+}
+
 void draw_dino_sprite(int x, int y)
 {
 	int rx;
@@ -69,7 +91,7 @@ void draw_dino_sprite(int x, int y)
 			unsigned char color = dino_sprite[ry][rx];
 			int screen_x = rx + x;
 			int screen_y = ry + y;
-			if (color != 0) {
+			if (color != 15) {
 				draw_pixel(x + rx, y + ry, color);
 			}
 		}
@@ -85,7 +107,7 @@ void draw_dino_sprite2(int x, int y)
 			unsigned char color = dino_sprite2[ry][rx];
 			int screen_x = rx + x;
 			int screen_y = ry + y;
-			if (color != 0) {
+			if (color != 15) {
 				draw_pixel(x + rx, y + ry, color);
 			}
 		}
@@ -101,7 +123,7 @@ void draw_cactus_sprite(int x, int y)
 			unsigned char color = cactus_sprite[ry][rx];
 			int screen_x = rx + x;
 			int screen_y = ry + y;
-			if (color != 0) {
+			if (color != 15) {
 				draw_pixel(x + rx, y + ry, color);
 			}
 		}
@@ -157,7 +179,10 @@ int main()
 			}
 			if (key == 27) {
 				pc_speaker();
-				break;
+				set_text_mode();
+				free(screen_buffer);
+				screen_buffer = NULL;
+				return 0;
 			}
 		}
 		cmx -= 4;
@@ -180,12 +205,15 @@ int main()
 			jump_v -= 2;
 
 			if (dino_y >= 100) {
-				dino_y = 100;
+				dino_y = 102;
 				is_jumping = 0;
 				jump_v = 0;
 			}
 		}
-		clear_buffer(0);
+		clear_buffer(15);
+
+		draw_ground(123, 0);
+
 		frame_counter++;
 		if (is_jumping) {
 			draw_dino_sprite(dino_x, dino_y);
@@ -202,18 +230,19 @@ int main()
 
 		flip_buffer();
 
-		if (check_collision(dino_x, dino_y, cmx, 100)){
+		if (check_collision(dino_x, dino_y, cmx, 100) || check_collision(dino_x, dino_y, cmx2, 100)){
 			pc_speaker();
 			delay(1000);
-			dino_y = 100;
-			main();
+			dino_y = 102;
+			is_jumping = 0;
+			jump_v = 0;
+			cmx = 280;
+			cmx2 = 180;
+			frame_counter = 0;
+			while(kbhit()) getch();
+			continue;
 		}
-		if (check_collision(dino_x, dino_y, cmx2, 100)){
-			pc_speaker();
-			delay(1000);
-			dino_y = 100;
-			main();
-		}
+
 		delay(30);
 	}
 	set_text_mode();
